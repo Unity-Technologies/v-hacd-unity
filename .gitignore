@@ -5,3 +5,5 @@ build/
 **/*.pdb
 CMakeFiles
 **/.DS_Store
+**/.vscode/
+**/.idea/
