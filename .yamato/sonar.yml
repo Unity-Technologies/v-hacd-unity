@@ -23,9 +23,9 @@ csharp:
             cd $PROJECT_PATH
             for file in *.csproj; do sed -i.backup "s/^[[:blank:]]*<ReferenceOutputAssembly>false<\/ReferenceOutputAssembly>/<ReferenceOutputAssembly>true<\/ReferenceOutputAssembly>/g" $file; rm $file.backup; done
             cd $PROJECT_ROOT
-        - mono ~/sonar-scanner-msbuild/SonarScanner.MSBuild.exe begin /k:$SONARQUBE_PROJECT_KEY /d:sonar.host.url=$SONARQUBE_ENDPOINT_URL_STG /d:sonar.login=$SONARQUBE_TOKEN_STG /d:sonar.projectBaseDir=$SONARQUBE_PROJECT_BASE_DIR
+        - mono ~/sonar-scanner-msbuild/SonarScanner.MSBuild.exe begin /k:$SONARQUBE_PROJECT_KEY /d:sonar.host.url=$SONARQUBE_ENDPOINT_URL_PRD /d:sonar.login=$SONARQUBE_TOKEN_PRD /d:sonar.projectBaseDir=$SONARQUBE_PROJECT_BASE_DIR
         - msbuild $MSBUILD_SLN_PATH
-        - mono ~/sonar-scanner-msbuild/SonarScanner.MSBuild.exe end /d:sonar.login=$SONARQUBE_TOKEN_STG
+        - mono ~/sonar-scanner-msbuild/SonarScanner.MSBuild.exe end /d:sonar.login=$SONARQUBE_TOKEN_PRD
     triggers:
         cancel_old_ci: true
         expression: |
@@ -53,7 +53,7 @@ standard:
         - cmake $SRC_DIR
         - ~/sonar-build-wrapper/build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir $BUILD_WRAPPER_DIR make
         - cd $ROOT_DIR
-        - ~/sonar-scanner/sonar-scanner-4.6.2.2472-linux/bin/sonar-scanner -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY -Dsonar.sources=$SRC_FOLDER -Dsonar.host.url=$SONARQUBE_ENDPOINT_URL_STG -Dsonar.login=$SONARQUBE_TOKEN_STG -Dsonar.cfamily.build-wrapper-output=$BUILD_WRAPPER_DIR
+        - ~/sonar-scanner/sonar-scanner-4.6.2.2472-linux/bin/sonar-scanner -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY -Dsonar.sources=$SRC_FOLDER -Dsonar.host.url=$SONARQUBE_ENDPOINT_URL_PRD -Dsonar.login=$SONARQUBE_TOKEN_PRD -Dsonar.cfamily.build-wrapper-output=$BUILD_WRAPPER_DIR
     triggers:
         cancel_old_ci: true
         expression: |
