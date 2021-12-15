@@ -1,4 +1,5 @@
-{% assign platforms = "linux mac windows" | split: " " %}
+# {% assign platforms = "linux mac windows" | split: " " %}
+{% assign platforms = "linux mac" | split: " " %}
 
 {% for platform in platforms %}
 {{platform}}:
@@ -12,10 +13,10 @@
         type: Unity::metal::macmini
         image: package-ci/mac
         flavor: m1.mac
-        {% elsif platform == "windows" %}
-        type: Unity::VM
-        image: slough-ops/win10-base:stable
-        flavor: b1.medium
+        # {% elsif platform == "windows" %}
+        # type: Unity::VM
+        # image: slough-ops/win10-base:stable
+        # flavor: b1.medium
         {% endif %}
     variables:
         COVERAGE_EXPECTED: 0

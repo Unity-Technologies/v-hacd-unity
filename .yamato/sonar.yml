@@ -7,7 +7,7 @@ csharp:
     variables:
         PROJECT_PATH: TestVhacd
         SONARQUBE_PROJECT_KEY: ai-robotics-vhacd-csharp
-        SONARQUBE_PROJECT_BASE_DIR: /Users/bokken/build/output/Unity-Technologies/VHACD/TestVhacd
+        SONARQUBE_PROJECT_BASE_DIR: /Users/bokken/build/output/Unity-Technologies/VHACD/com.unity.robotics.vhacd
         MSBUILD_SLN_PATH: ./TestVhacd/TestVhacd.sln
         PROJECT_ROOT: /Users/bokken/build/output/Unity-Technologies/VHACD/
         UNITY_VERSION: 2020.3.21f1
@@ -45,7 +45,9 @@ standard:
         - unzip sonar-scanner-linux.zip -d ~/sonar-scanner
         - curl $SONARQUBE_ENDPOINT_URL_STG/static/cpp/build-wrapper-linux-x86.zip -o sonar-build-wrapper-linux.zip -L
         - unzip sonar-build-wrapper-linux.zip -d ~/sonar-build-wrapper
-        - ~/sonar-build-wrapper/build-wrapper-linux-x86/build-wrapper-linux-x86 --out-dir build_wrapper_output_directory catkin_make
+        - mkdir build
+        - cd build
+        - ~/sonar-build-wrapper/build-wrapper-linux-x86/build-wrapper-linux-x86 --out-dir build_wrapper_output_directory cmake -G "Unix Makefiles" ../src
         - ~/sonar-scanner/sonar-scanner-4.6.2.2472-linux/bin/sonar-scanner -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY -Dsonar.sources=src -Dsonar.host.url=$SONARQUBE_ENDPOINT_URL_STG -Dsonar.login=$SONAR_TOKEN_STG -Dsonar.cfamily.build-wrapper-output=build_wrapper_output_directory
     triggers:
         cancel_old_ci: true
