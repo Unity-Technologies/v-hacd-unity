@@ -12,7 +12,26 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ### Added
 
+Added Sonarqube Scanner, multiplatform Yamato testing
+
 ### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+## [0.0.1-preview] - 2021-12-14
+
+### Upgrade Notes
+
+### Known Issues
+
+### Added
+
+### Changed
+
 Created VHACD Unity package
 
 ### Deprecated
