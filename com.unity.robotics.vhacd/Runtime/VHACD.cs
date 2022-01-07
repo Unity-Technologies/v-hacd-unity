@@ -186,6 +186,8 @@ namespace MeshProcess
 
                 convexMesh.Add(hullMesh);
             }
+
+            DestroyVHACD(vhacd);
             return convexMesh;
         }
     }
