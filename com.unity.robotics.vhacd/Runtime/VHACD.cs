@@ -1,4 +1,4 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,92 +8,86 @@ namespace MeshProcess
 {
     public class VHACD : MonoBehaviour
     {
-        [System.Serializable]
+        // Should match `enum class FillMode` in VHACD.h
+        [Serializable]
+        public enum FillMode
+        {
+            FLOOD_FILL,    // 0
+            SURFACE_ONLY,  // 1
+            RAYCAST_FILL   // 2
+        }
+
+        [Serializable]
+        [StructLayout(LayoutKind.Sequential)]
         public unsafe struct Parameters
         {
             public void Init()
             {
-                m_resolution = 100000;
-                m_concavity = 0.001;
-                m_planeDownsampling = 4;
-                m_convexhullDownsampling = 4;
-                m_alpha = 0.05;
-                m_beta = 0.05;
-                m_pca = 0;
-                m_mode = 0; // 0: voxel-based (recommended), 1: tetrahedron-based
-                m_maxNumVerticesPerCH = 64;
-                m_minVolumePerCH = 0.0001;
                 m_callback = null;
                 m_logger = null;
-                m_convexhullApproximation = 1;
-                m_oclAcceleration = 0;
-                m_maxConvexHulls = 1024;
-                m_projectHullVertices = true; // This will project the output convex hull vertices onto the original source mesh to increase the floating point accuracy of the results
+                m_taskRunner = null;
+                m_maxConvexHulls = 32;
+                m_resolution = 100000;
+                m_minimumVolumePercentErrorAllowed = 1;
+                m_maxRecursionDepth = 10;
+                m_shrinkWrap = true;
+                m_fillMode = FillMode.FLOOD_FILL;
+                m_maxNumVerticesPerCH = 64;
+                m_asyncACD = true;
+                m_minEdgeLength = 2;
+                m_findBestPlane = false;
             }
-
-            [Tooltip("maximum concavity")]
-            [Range(0, 1)]
-            public double m_concavity;
-
-            [Tooltip("controls the bias toward clipping along symmetry planes")]
-            [Range(0, 1)]
-            public double m_alpha;
-
-            [Tooltip("controls the bias toward clipping along revolution axes")]
-            [Range(0, 1)]
-            public double m_beta;
-
-            [Tooltip("controls the adaptive sampling of the generated convex-hulls")]
-            [Range(0, 0.01f)]
-            public double m_minVolumePerCH;
 
             public void* m_callback;
             public void* m_logger;
+            public void* m_taskRunner;
 
-            [Tooltip("maximum number of voxels generated during the voxelization stage")]
+            [Tooltip("The maximum number of convex hulls to produce. Performance sensitive: adding more MeshColliders slows down Unity at runtime.")]
+            [Range(1, 2048)]
+            public uint m_maxConvexHulls;
+
+            [Tooltip("Maximum number of voxels generated during the voxelization stage. Higher value increases generation time.")]
             [Range(10000, 64000000)]
             public uint m_resolution;
 
-            [Tooltip("controls the maximum number of triangles per convex-hull")]
+            [Tooltip(
+                "If the voxels are within X% of the volume of the hull, we consider this a close enough approximation.")]
+            [Range(0.001f, 10)]
+            public double m_minimumVolumePercentErrorAllowed;
+
+            [Tooltip("Maximum recursion depth. Default value is 10.")]
+            [Range(1, 15)]
+            public uint m_maxRecursionDepth;
+
+            [Tooltip(
+                "This will project the output convex hull vertices onto the original source mesh to increase the floating point accuracy of the results. Default is true.")]
+            public bool m_shrinkWrap;
+
+            [Tooltip("How to fill the interior of the voxelized mesh")]
+            public FillMode m_fillMode;
+
+            [Tooltip("Controls the maximum number of triangles per convex-hull")]
             [Range(4, 1024)]
             public uint m_maxNumVerticesPerCH;
 
-            [Tooltip("controls the granularity of the search for the \"best\" clipping plane")]
+            [Tooltip("Whether or not to run asynchronously, taking advantage of additional cores")]
+            public bool m_asyncACD;
+
+            [Tooltip("Minimum size of a voxel edge. Default value is 2 voxels.")]
             [Range(1, 16)]
-            public uint m_planeDownsampling;
+            public uint m_minEdgeLength;
 
-            [Tooltip("controls the precision of the convex-hull generation process during the clipping plane selection stage")]
-            [Range(1, 16)]
-            public uint m_convexhullDownsampling;
+            [Tooltip("If false, splits hulls in the middle. If true, tries to find optimal split plane location. False by default.")]
+            public bool m_findBestPlane;
+        }
 
-            [Tooltip("enable/disable normalizing the mesh before applying the convex decomposition")]
-            [Range(0, 1)]
-            public uint m_pca;
-
-            [Tooltip("0: voxel-based (recommended), 1: tetrahedron-based")]
-            [Range(0, 1)]
-            public uint m_mode;
-
-            [Range(0, 1)]
-            public uint m_convexhullApproximation;
-
-            [Range(0, 1)]
-            public uint m_oclAcceleration;
-
-            public uint m_maxConvexHulls;
-
-            [Tooltip("This will project the output convex hull vertices onto the original source mesh to increase the floating point accuracy of the results")]
-            public bool m_projectHullVertices;
-        };
-
+        [StructLayout(LayoutKind.Sequential)]
         unsafe struct ConvexHull
         {
             public double* m_points;
             public uint* m_triangles;
             public uint m_nPoints;
             public uint m_nTriangles;
-            public double m_volume;
-            public fixed double m_center[3];
         };
 
         [DllImport("libvhacd")] static extern unsafe void* CreateVHACD();
@@ -124,7 +118,11 @@ namespace MeshProcess
         static extern unsafe void GetConvexHull(
             void* pVHACD,
             uint index,
-            ConvexHull* ch);
+            ConvexHull* convexHull);
+
+        [DllImport("libvhacd")]
+        static extern unsafe void FreeConvexHull(
+            ConvexHull* convexHull);
 
         public Parameters m_parameters;
 
@@ -183,8 +181,10 @@ namespace MeshProcess
                 Marshal.Copy((System.IntPtr)hull.m_triangles, indices, 0, indices.Length);
                 hullMesh.SetTriangles(indices, 0);
 
-
+                
                 convexMesh.Add(hullMesh);
+
+                FreeConvexHull(&hull);
             }
 
             DestroyVHACD(vhacd);

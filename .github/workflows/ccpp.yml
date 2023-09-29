@@ -10,7 +10,7 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - platform: windows-latest
-            cmake_type: "Visual Studio 16 2019"
+            cmake_type: "Visual Studio 17 2022"
             dll_name: "Release/libvhacd.dll"
             target_dll_name: "libvhacd.dll"
           - platform: ubuntu-latest
@@ -32,14 +32,14 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -G "${{ matrix.cmake_type }}" ../src
+        cmake -G "${{ matrix.cmake_type }}" -DCMAKE_BUILD_TYPE=Release ../src
     - name: build
       run: cmake --build build --config Release
 
     - uses: actions/upload-artifact@v1
       with:
         name: ${{ matrix.platform }}
-        path: build/dll/${{ matrix.dll_name }}
+        path: build/${{ matrix.dll_name }}
 
   create_release:
     runs-on: ubuntu-latest
