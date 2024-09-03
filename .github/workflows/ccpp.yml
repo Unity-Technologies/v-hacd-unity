@@ -59,15 +59,15 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: build of ${{ github.sha }}
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
           name: ubuntu-latest
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
           name: windows-latest
         
-    - uses: actions/download-artifact@v1
+    - uses: actions/download-artifact@v4.1.7
       with:
           name: macos-latest
       
