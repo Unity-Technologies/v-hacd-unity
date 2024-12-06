@@ -11,7 +11,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v4.0.0
+      - uses: actions/stale@v9.0.0
         id: stale
         with:
           stale-issue-label: 'stale'
